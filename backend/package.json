@@ -1,0 +1,40 @@
+{
+  "name": "monexra-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc && cp ./package.json ./dist",
+    "start": "node dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Monexra Backend API",
+  "dependencies": {
+    "@google/genai": "^0.13.0",
+    "axios": "^1.9.0",
+    "bcrypt": "^5.1.1",
+    "cloudinary": "^1.41.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.14.1",
+    "multer": "^1.4.5-lts.2",
+    "multer-storage-cloudinary": "^4.0.0",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^8.0.4",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "resend": "^4.5.1",
+    "uuid": "^11.1.0",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "ts-node-dev": "^2.0.0"
+  }
+}
