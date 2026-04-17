@@ -6,6 +6,7 @@ import {
   getAllReportsController,
   updateReportSettingController,
 } from "../controllers/report_controller";
+import { authMiddleware } from "../middlewares/auth.middleware";
 
 const reportRoutes = Router();
 
@@ -13,13 +14,12 @@ const reportRoutes = Router();
 const storage = multer.memoryStorage(); // file stays in memory
 const upload = multer({ storage });
 
-// GET routes
-reportRoutes.get("/all", getAllReportsController);
-reportRoutes.get("/generate", generateReportController);
-reportRoutes.put("/update-setting", updateReportSettingController);
+// GET routes - all protected
+reportRoutes.get("/all", authMiddleware, getAllReportsController);
+reportRoutes.get("/generate", authMiddleware, generateReportController);
+reportRoutes.put("/update-setting", authMiddleware, updateReportSettingController);
 
-// POST upload route
-// ✅ Make sure your form-data key in Postman is "file"
-reportRoutes.post("/upload", upload.single("file"), generateReportFromImageController);
+// POST upload route - protected
+reportRoutes.post("/upload", authMiddleware, upload.single("file"), generateReportFromImageController);
 
 export default reportRoutes;

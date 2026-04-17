@@ -11,12 +11,13 @@ export const baseTransactionSchema = z.object({
         TransactionTypeEnum.EXPENSE],{
             errorMap: () => ({
                 message: "Transaction type must either INCOME or EXPENSE",
-
+ 
             }),
-            
+             
         }),
         amount: z.number().positive("Amount must be positive"),
         currency: z.enum(Object.values(CurrencyEnum)).default(CurrencyEnum.INR),
+        originalCurrency: z.enum(Object.values(CurrencyEnum)).optional(),
         category: z.string().min(1, "Category is required"),
         date: z
         .union([z.string().datetime({ message: "Invalid date string" }),z.date(),])
