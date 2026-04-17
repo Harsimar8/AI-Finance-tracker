@@ -2,8 +2,7 @@ import mongoose from "mongoose";
 import TransactionModel, { TransactionTypeEnum } from "../models/transaction.model";
 import { getDateRange } from "../utils/date";
 import { DateRangePreset } from "../enums/date-range.enum";
-import { convertToDollarUnit } from "../utils/format-currency";
-import { convertCurrency, CurrencyEnum } from "../utils/currency";
+import { CurrencyEnum } from "../utils/currency";
 
 export interface CategorySpending {
   category: string;
@@ -59,22 +58,19 @@ export const analyzeBudgetService = async (
     date: { $gte: from, $lte: to },
   }).lean();
 
-  const userPreferredCurrency = CurrencyEnum.INR;
-
   let totalIncome = 0;
   let totalExpenses = 0;
   const categorySpending: Record<string, number> = {};
 
   for (const tx of transactions) {
-    const amount = convertToDollarUnit(tx.amount);
-    const convertedAmount = convertCurrency(amount, tx.currency || CurrencyEnum.USD, userPreferredCurrency);
+    const amount = tx.amount || 0;
 
     if (tx.type === TransactionTypeEnum.INCOME) {
-      totalIncome += convertedAmount;
+      totalIncome += amount;
     } else {
-      totalExpenses += convertedAmount;
+      totalExpenses += amount;
       const category = tx.category?.toLowerCase() || "other";
-      categorySpending[category] = (categorySpending[category] || 0) + convertedAmount;
+      categorySpending[category] = (categorySpending[category] || 0) + amount;
     }
   }
 

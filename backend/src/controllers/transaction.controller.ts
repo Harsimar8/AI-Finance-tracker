@@ -28,10 +28,14 @@ import { TransactionModel } from "../models/transaction.model";
 
 export const createTransactionController = asyncHandler(
   async (req: Request, res: Response) => {
+    console.log("📝 REQ.USER:", req.user);
+    console.log("📝 REQ.BODY:", req.body);
+    
     const body = createTransactionSchema.parse(req.body);
 
     // ensure userId is string
    const userId = req.user?.userId;
+   console.log("📝 USER ID:", userId);
 
     const transaction = await createTransactionService(body, userId);
 

@@ -1,33 +1,17 @@
 export enum CurrencyEnum {
-    USD = "USD",
     INR = "INR",
-    AED = "AED",
-    GBP = "GBP",
-    EUR = "EUR",
 }
 
 export const CurrencySymbols: Record<CurrencyEnum, string> = {
-    [CurrencyEnum.USD]: "$",
     [CurrencyEnum.INR]: "₹",
-    [CurrencyEnum.AED]: "د.إ",
-    [CurrencyEnum.GBP]: "£",
-    [CurrencyEnum.EUR]: "€",
 };
 
 export const CurrencyNames: Record<CurrencyEnum, string> = {
-    [CurrencyEnum.USD]: "US Dollar",
     [CurrencyEnum.INR]: "Indian Rupee",
-    [CurrencyEnum.AED]: "UAE Dirham",
-    [CurrencyEnum.GBP]: "British Pound",
-    [CurrencyEnum.EUR]: "Euro",
 };
 
 const exchangeRatesUSD: Record<CurrencyEnum, number> = {
-    [CurrencyEnum.USD]: 1,
-    [CurrencyEnum.INR]: 83.12,
-    [CurrencyEnum.AED]: 3.67,
-    [CurrencyEnum.GBP]: 0.79,
-    [CurrencyEnum.EUR]: 0.92,
+    [CurrencyEnum.INR]: 1,
 };
 
 export function convertCurrency(

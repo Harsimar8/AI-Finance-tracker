@@ -18,19 +18,55 @@ import analyticsRoutes from "./routes/analytics.route";
 import { initializeCrons } from "./crons";
 import { calculateNextReportDate } from "./utils/helper";
 import { getDateRange } from "./utils/date";
+import { genAI, genAIModel } from "./config/google-ai-config";
 
 const app = express();
 const BASE_PATH = Env.BASE_PATH;
 
-/* ================= MIDDLEWARES ================= */
-
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.use(
-  cors({
-    origin: Env.FRONTEND_ORIGIN,
+app.use(cors({
+    origin: "http://localhost:5173",
     credentials: true,
+}));
+
+/* ================= TEST ROUTES ================= */
+
+app.get(
+  "/",
+  asyncHandler(async (req: Request, res: Response) => {
+    throw new BadRequestException("This is a test Error");
+
+    res.status(HTTPSTATUS.OK).json({
+      message: "Hello Subscribe to the channel",
+    });
+  })
+);
+
+/* ================= AI TEST ROUTE ================= */
+
+app.get(
+  `${BASE_PATH}/test-ai`,
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      console.log("Testing AI with key:", Env.GEMINI_API_KEY?.substring(0, 15) + "...");
+      
+      const result = await genAI.models.generateContent({
+        model: genAIModel,
+        contents: [{ role: "user", parts: [{ text: "Say 'AI is working' if you receive this" }] }],
+        config: { responseMimeType: "text/plain" },
+      });
+      
+      res.status(HTTPSTATUS.OK).json({
+        message: "AI test successful",
+        response: result.text,
+      });
+    } catch (error: any) {
+      console.error("AI Test Error:", error.message);
+      res.status(HTTPSTATUS.BAD_REQUEST).json({
+        message: "AI test failed",
+        error: error.message,
+      });
+    }
   })
 );
 

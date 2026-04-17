@@ -17,6 +17,8 @@ export const createTransactionService = async (
   body: CreateTransactionType,
   userId: string
 ) => {
+  console.log("🔧 Creating transaction:", { body, userId });
+  
   let nextRecurringDate: Date | undefined;
   const currentDate = new Date();
 

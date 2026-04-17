@@ -5,7 +5,7 @@ import TransactionModel, {
 } from "../models/transaction.model";
 import { getDateRange } from "../utils/date";
 import { differenceInDays, subDays, subYears } from "date-fns";
-import { convertToDollarUnit } from "../utils/format-currency";
+
 
 export const summaryAnalyticsService = async (
   userId: string,
@@ -114,6 +114,8 @@ export const summaryAnalyticsService = async (
 
   const [current] = await TransactionModel.aggregate(currentPeriodPipeline);
 
+  console.log("📊 Analytics raw data:", current);
+
   const {
     totalIncome = 0,
     totalExpenses = 0,
@@ -219,9 +221,9 @@ export const summaryAnalyticsService = async (
   }
 
   return {
-    availableBalance: convertToDollarUnit(availableBalance),
-    totalIncome: convertToDollarUnit(totalIncome),
-    totalExpenses: convertToDollarUnit(totalExpenses),
+    availableBalance: availableBalance,
+    totalIncome: totalIncome,
+    totalExpenses: totalExpenses,
     savingRate: {
       percentage: parseFloat(savingData.savingsPercentage.toFixed(2)),
       expenseRatio: parseFloat(savingData.expenseRatio.toFixed(2)),
@@ -230,15 +232,15 @@ export const summaryAnalyticsService = async (
     percentageChange: {
       ...percentageChange,
       previousValues: {
-        incomeAmount: convertToDollarUnit(
+        incomeAmount:
           percentageChange.previousValues.incomeAmount
-        ),
-        expenseAmount: convertToDollarUnit(
+        ,
+        expenseAmount:
           percentageChange.previousValues.expenseAmount
-        ),
-        balanceAmount: convertToDollarUnit(
+        ,
+        balanceAmount:
           percentageChange.previousValues.balanceAmount
-        ),
+        ,
       },
     },
     preset: {
@@ -351,8 +353,8 @@ export const chartAnalyticsService = async (
 
   const transaformedData = (resultData?.chartData || []).map((item: any) => ({
     date: item.date,
-    income: convertToDollarUnit(item.income),
-    expenses: convertToDollarUnit(item.expenses),
+    income: item.income,
+    expenses: item.expenses,
   }));
 
   return {
@@ -476,10 +478,10 @@ export const expensePieChartBreakdownService = async (
     breakdown: [],
   };
   const transformedData = {
-    totalSpent: convertToDollarUnit(data.totalSpent),
+    totalSpent: data.totalSpent,
     breakdown: data.breakdown.map((item: any) => ({
       ...item,
-      value: convertToDollarUnit(item.value),
+      value: item.value,
     })),
   };
 

@@ -8,8 +8,12 @@ type AuthUser = {
 };
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization?.split(" ")[1];
-   console.log("🔥 HEADERS:", req.headers.authorization);
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") 
+    ? authHeader.split(" ")[1] 
+    : authHeader;
+    
+  console.log("🔥 AUTH HEADERS:", req.headers.authorization, "Token:", token);
   if (!token) throw new UnauthorizedException("No token provided");
 
   try {
