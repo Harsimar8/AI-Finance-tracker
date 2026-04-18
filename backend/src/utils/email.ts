@@ -1,17 +1,25 @@
 // utils/email.ts
+import { sendReportEmail as sendEmail } from "../services/email.service";
+
 export const sendReportEmail = async ({
   email,
   username,
   report,
   frequency,
+  attachment,
 }: {
   email: string;
   username: string;
   report: any;
   frequency: string;
+  attachment?: { filename: string; content: Buffer } | null;
 }) => {
-  // For now, just log to console
-  console.log(`Sending report email to ${email} (${username}) with frequency ${frequency}`);
-  console.log("Report:", report);
-  return true;
+  try {
+    await sendEmail({ email, username, report, frequency, attachment });
+    console.log(`✅ Report email sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Failed to send report email to ${email}:`, error);
+    return false;
+  }
 };

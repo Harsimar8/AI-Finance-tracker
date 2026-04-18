@@ -144,38 +144,48 @@ export const analyzeBudgetService = async (
 function getCategoryTip(category: string, amount: number, savingsRate: number): string {
   const tips: Record<string, string[]> = {
     dining: [
-      "Consider meal prepping to reduce restaurant expenses.",
-      "Try cooking at home more often - it's healthier and cheaper.",
-      "Use food delivery apps with discounts and coupons.",
+      `You've spent ₹${Math.round(amount).toLocaleString()} on dining this month. Try meal prepping to save up to 40%.`,
+      `₹${Math.round(amount).toLocaleString()} on dining - consider cooking at home 3 days a week.`,
+      `Dining expenses at ₹${Math.round(amount).toLocaleString()} - useZomato/Swiggy coupons to save 20%.`,
     ],
     shopping: [
-      "Wait for sales events like festive season discounts.",
-      "Make a shopping list and stick to it to avoid impulse buys.",
-      "Consider second-hand or refurbished items.",
+      `Shopping at ₹${Math.round(amount).toLocaleString()} - wait for Amazon/flipkart sales for 30%+ discounts.`,
+      `Consider making a shopping list to avoid impulse purchases.`,
+      `₹${Math.round(amount).toLocaleString()} on shopping - try refurbished items for 50% savings.`,
     ],
     entertainment: [
-      "Look for free or low-cost entertainment options.",
-      "Consider streaming services instead of multiple subscriptions.",
-      "Explore community events and free attractions.",
+      `Entertainment at ₹${Math.round(amount).toLocaleString()} - consider sharing streaming plans.`,
+      `Look for free community events to reduce entertainment costs.`,
+      `₹${Math.round(amount).toLocaleString()} - explore free local attractions.`,
     ],
     transportation: [
-      "Consider public transport or carpooling to save on fuel.",
-      "Maintain your vehicle to improve fuel efficiency.",
-      "Plan routes to avoid unnecessary trips.",
+      `Transport at ₹${Math.round(amount).toLocaleString()} - try public transport or carpooling.`,
+      `Consider bike/scooter for better fuel efficiency.`,
+      `Plan routes optimally to reduce fuel costs by 15%.`,
     ],
     healthcare: [
-      "Invest in preventive health to avoid costly treatments.",
-      "Consider health insurance if not already covered.",
-      "Look for wellness programs that offer discounts.",
+      `Healthcare at ₹${Math.round(amount).toLocaleString()} - invest in preventive health.`,
+      `Consider health insurance for long-term savings.`,
+      `Look for corporate wellness programs for discounts.`,
     ],
     groceries: [
-      "Buy in bulk for non-perishable items.",
-      "Use loyalty programs and discount coupons.",
-      "Plan weekly meals to reduce food waste.",
+      `Groceries at ₹${Math.round(amount).toLocaleString()} - buy in bulk for non-perishables.`,
+      `Use grocery apps for 10-20% cashback.`,
+      `Plan weekly meals to reduce food waste and save 15%.`,
+    ],
+    income: [
+      `Great income source! Consider diversifying.`,
+      `Look for ways to increase this income stream.`,
+      `Invest some of this in SIPs for long-term growth.`,
+    ],
+    other: [
+      `Review this category to identify potential savings.`,
+      `Track these expenses to find patterns.`,
+      `Consider if this expense is necessary.`,
     ],
   };
 
-  const categoryTips = tips[category] || ["Review this category for potential savings."];
+  const categoryTips = tips[category] || tips["other"];
   return categoryTips[Math.floor(Math.random() * categoryTips.length)];
 }
 

@@ -55,32 +55,32 @@ Payment method inference:
 
 export const reportInsightsPrompt = ({
     totalIncome,
-        totalExpenses,
-        availableBalance,
-        savingRate,
-        categories,
-        periodLabel,
+    totalExpenses,
+    availableBalance,
+    savingRate,
+    categories,
+    periodLabel,
 }: {
     totalIncome: number;
-        totalExpenses: number;
-        availableBalance: number;
-        savingRate: number;
-        categories: Record<string, {amount: number; percentage:
-            number }>;
-        periodLabel: string;
-)}  => {
-
+    totalExpenses: number;
+    availableBalance: number;
+    savingRate: number;
+    categories: Record<string, { amount: number; percentage: number }>;
+    periodLabel: string;
+}) => {
     const categoryList = Object.entries(categories)
-    .map(([name,{amount, percentage }]) => 
-    `- ${name}: ${amount} (${percentage}%)`
-)
-.join("\n");
+        .map(([name, { amount, percentage }]) =>
+            `- ${name}: ₹${amount} (${percentage}%)`
+        )
+        .join("\n");
 
-console.log(categoryList);
-
-return `
-
-`;
-
-    
+    return `
+Report period: ${periodLabel}
+Total Income: ₹${totalIncome}
+Total Expenses: ₹${totalExpenses}
+Available Balance: ₹${availableBalance}
+Savings Rate: ${savingRate}%
+Top Spending Categories:
+${categoryList}
+    `;
 };

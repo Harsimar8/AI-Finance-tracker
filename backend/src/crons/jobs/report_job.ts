@@ -2,14 +2,12 @@ import { endOfMonth, startOfMonth, subMonths, format } from "date-fns";
 import mongoose from "mongoose";
 
 import ReportSettingModel from "../../models/report-setting.model";
+import ReportModel, { ReportStatusEnum } from "../../models/report.model";
 import { UserDocument } from "../../models/user.model";
 import { calculateNextReportDate } from "../../utils/helper";
 
-// ❗ add these imports according to your project
-// import ReportModel from "../../models/report.model";
-// import { ReportStatusEnum } from "../../models/report.model";
-// import { generateReportService } from "../../services/report.service";
-// import { sendReportEmail } from "../../services/email.service";
+import { generateReportService } from "../../services/report.service";
+import { sendReportEmail } from "../../utils/email";
 
 export const processReportJob = async () => {
     const now = new Date();

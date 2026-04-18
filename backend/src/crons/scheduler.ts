@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import { processRecurringTransactions } from '../controllers/transaction.controller';
+import { processReportJob } from './jobs/report_job';
 
 
 const scheduleJob = (name: string, time: string, job: Function) => {
@@ -29,9 +30,7 @@ export const startJobs = () => {
         scheduleJob(
             "Reports",
             "*/1 * * * *",  // ✅ FIXED
-            async () => {
-                console.log("Generating reports...");
-            }
+            processReportJob
         )
     ];
 };

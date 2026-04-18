@@ -4,6 +4,10 @@ import { HTTPSTATUS } from "../config/http.config";
 import { generateReportFromImageService, generateReportService, getAllReportsService,updateReportSettingService } from "../services/report.service";
 import { updateReportSettingSchema } from "../validators/report_validator";
 import { sendReportEmail } from "../utils/email";
+import ReportSettingModel from "../models/report-setting.model";
+import { UserDocument } from "../models/user.model";
+import mongoose from "mongoose";
+import { startOfMonth, endOfMonth, subMonths } from "date-fns";
 
 export const getAllReportsController = asyncHandler(
     async (req: Request, res: Response) => {
@@ -66,7 +70,9 @@ export const updateReportSettingController = asyncHandler(
 export const generateReportController = asyncHandler(
     async (req: Request, res: Response) => {
         const userId = req.user?.userId;
-        console.log("Generating report for user:", userId);
+        const userEmail = req.user?.email as string;
+        const userName = req.user?.name as string || "User";
+        console.log("Generating report for user:", userId, "email:", userEmail);
         
         try {
             const { from, to} = req.query;
@@ -85,10 +91,50 @@ export const generateReportController = asyncHandler(
 
             console.log("Date range:", fromDate, "to", toDate);
 
-            await generateReportService(userId as string, fromDate, toDate);
+            let report = await generateReportService(userId as string, fromDate, toDate);
+            console.log("Generated report:", report);
+
+            // If no transactions found, create a placeholder report
+            if (!report) {
+                report = {
+                    period: `${fromDate.toDateString()} - ${toDate.toDateString()}`,
+                    summary: {
+                        income: 0,
+                        expenses: 0,
+                        balance: 0,
+                        savingsRate: 0,
+                        topCategories: [],
+                    },
+                };
+            }
+
+            // Send email to user with their report
+            if (userEmail) {
+                try {
+                    await sendReportEmail({
+                        email: userEmail,
+                        username: userName,
+                        report: {
+                            period: report.period,
+                            totalIncome: report.summary.income,
+                            totalExpenses: report.summary.expenses,
+                            availableBalance: report.summary.balance,
+                            savingsRate: report.summary.savingsRate,
+                            topSpendingCategories: report.summary.topCategories,
+                        },
+                        frequency: "Monthly",
+                    });
+                    console.log(`Report email sent to ${userEmail}`);
+                } catch (emailError) {
+                    console.error("Failed to send report email:", emailError);
+                }
+            } else {
+                console.error("User email not found:", req.user);
+            }
 
             return res.status(HTTPSTATUS.OK).json({
                 message: "Report generated successfully",
+                report,
             });
         } catch (error) {
             console.error("Error generating report:", error);
@@ -96,5 +142,62 @@ export const generateReportController = asyncHandler(
                 message: "Report generation initiated",
             });
         }
+    }
+);
+
+export const resendAllReportsController = asyncHandler(
+    async (req: Request, res: Response) => {
+        const now = new Date();
+        const from = startOfMonth(subMonths(now, 1));
+        const to = endOfMonth(subMonths(now, 1));
+
+        const settings = await ReportSettingModel.find({
+            isEnabled: true,
+        }).populate<{ userId: UserDocument }>("userId");
+
+        let successCount = 0;
+        let failCount = 0;
+        const errors: string[] = [];
+
+        for (const setting of settings) {
+            const user = setting.userId as UserDocument;
+            if (!user || !user.email) {
+                failCount++;
+                continue;
+            }
+
+            try {
+                const report = await generateReportService(user.id, from, to);
+
+                if (report) {
+                    await sendReportEmail({
+                        email: user.email,
+                        username: user.name || "User",
+                        report: {
+                            period: report.period,
+                            totalIncome: report.summary.income,
+                            totalExpenses: report.summary.expenses,
+                            availableBalance: report.summary.balance,
+                            savingsRate: report.summary.savingsRate,
+                            topSpendingCategories: report.summary.topCategories,
+                        },
+                        frequency: "Monthly",
+                    });
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            } catch (error: any) {
+                failCount++;
+                errors.push(`Failed for ${user.email}: ${error.message}`);
+            }
+        }
+
+        return res.status(HTTPSTATUS.OK).json({
+            message: `Resend completed: ${successCount} sent, ${failCount} failed`,
+            successCount,
+            failCount,
+            errors: errors.length > 0 ? errors : undefined,
+        });
     }
 );

@@ -11,5 +11,10 @@
   "description": "Monexra - AI-Powered Personal Finance Management",
   "devDependencies": {
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@google/genai": "^1.50.1",
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^17.4.2"
   }
 }

@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 
 export enum ReportStatusEnum{
-    SENT: "SENT",
-    PENDING: "PENDING",
-    FAILED: "FAILED",
-    NO_aCTIVITY = "NO_ACTIVITY",
+    SENT = "SENT",
+    PENDING = "PENDING",
+    FAILED = "FAILED",
+    NO_ACTIVITY = "NO_ACTIVITY",
 }
 
 export interface ReportDocument extends Document{

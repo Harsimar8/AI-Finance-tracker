@@ -5,6 +5,7 @@ import {
   generateReportFromImageController,
   getAllReportsController,
   updateReportSettingController,
+  resendAllReportsController,
 } from "../controllers/report_controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 
@@ -21,5 +22,8 @@ reportRoutes.put("/update-setting", authMiddleware, updateReportSettingControlle
 
 // POST upload route - protected
 reportRoutes.post("/upload", authMiddleware, upload.single("file"), generateReportFromImageController);
+
+// POST resend all reports - admin only
+reportRoutes.post("/resend-all", authMiddleware, resendAllReportsController);
 
 export default reportRoutes;

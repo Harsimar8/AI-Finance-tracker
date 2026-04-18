@@ -7,7 +7,9 @@ import { BadRequestException, NotFoundException } from "../utils/app-error";
 import { string } from "zod";
 import axios from "axios";
 import { genAI } from "../config/google-ai-config";
-import { createPartFromBase64, createUserContent } from "@google/genai";
+import { callGeminiWithRetry } from "../utils/geminiRetry";
+import { Env } from "../config/env.config";
+import { receiptPrompt } from "../utils/prompt";
 
 /* =======================
    CREATE TRANSACTION
@@ -309,27 +311,36 @@ export const scanReceiptService = async (
     if (!base64String)
       throw new BadRequestException("Could not process file");
 
-    console.log("Calling Gemini API with model:", genAIModel);
-    
-    const result = await genAI.models.generateContent({
-      model: genAIModel,
-      contents: [
-        createUserContent([
-          receiptPrompt,
-          createPartFromBase64(base64String, file.mimetype),
-        ]),
-      ],
-      config: {
-        temperature: 0,
-        topP: 1,
-        responseMimeType: "application/json",
-        maxOutputTokens: 2048,
+   console.log("Calling Gemini API with model:");
+
+
+const result = await callGeminiWithRetry(
+  genAI.models,
+  {
+    model: "models/gemini-2.5-flash",
+    contents: [
+      {
+        inlineData: {
+          data: base64,
+          mimeType,
+        },
       },
-    });
+      {
+        text: receiptPrompt,
+      },
+    ],
+  }
+);
 
-    console.log("Gemini API response received");
 
-    const response = result.text;
+const response = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+if (!response) {
+  console.error("❌ Empty Gemini response");
+  return { error: "Empty AI response" };
+}
+
+  
     const cleanedText = response
       ?.replace(/```(?:json)?\n?/g, "")
       .trim();
@@ -338,7 +349,14 @@ export const scanReceiptService = async (
       return { error: "Could not read receipt content" };
     }
 
-    const data = JSON.parse(cleanedText);
+    let data;
+
+try {
+  data = JSON.parse(cleanedText);
+} catch (err) {
+  console.error("❌ JSON parse failed:", cleanedText);
+  return { error: "Invalid AI response format" };
+}
     console.log("Parsed data:", data);
 
     if (!data.amount || !data.date) {
@@ -388,37 +406,39 @@ export const scanReceiptService = async (
     return { error: "Receipt scanning service unavailable" };
   }
 };
-
 export const scanReceiptFromBase64 = async (
   payload: ScanReceiptPayload
 ) => {
   const { base64, mimeType, fileName } = payload;
-  
+
   if (!base64) throw new BadRequestException("No image data provided");
 
   try {
-    console.log("Processing base64 image, filename:", fileName, "mimeType:", mimeType);
-    console.log("Calling Gemini API with model:", genAIModel);
-    
-    const result = await genAI.models.generateContent({
-      model: genAIModel,
-      contents: [
-        createUserContent([
-          receiptPrompt,
-          createPartFromBase64(base64, mimeType),
-        ]),
-      ],
-      config: {
-        temperature: 0,
-        topP: 1,
-        responseMimeType: "application/json",
-        maxOutputTokens: 2048,
+    console.log("📸 Processing base64:", fileName);
+
+  const result = await callGeminiWithRetry(
+  genAI.models,
+  {
+    model: "models/gemini-2.5-flash",
+    contents: [
+      {
+        inlineData: {
+          data: base64,
+          mimeType,
+        },
       },
-    });
+      {
+        text: receiptPrompt,
+      },
+    ],
+  }
+);
+     
 
-    console.log("Gemini API response received");
+    const response = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    const response = result.text;
+    console.log("🧠 Gemini raw response:", response);
+
     const cleanedText = response
       ?.replace(/```(?:json)?\n?/g, "")
       .trim();
@@ -428,21 +448,40 @@ export const scanReceiptFromBase64 = async (
     }
 
     const data = JSON.parse(cleanedText);
-    console.log("Parsed data:", data);
 
     if (!data.amount || !data.date) {
       return { error: "Receipt missing information" };
     }
 
     let category = data.category?.toLowerCase() || "other";
-    
-    const validCategories = ["groceries", "dining", "transportation", "utilities", "entertainment", "shopping", "healthcare", "travel", "other"];
+
+    const validCategories = [
+      "groceries",
+      "dining",
+      "transportation",
+      "utilities",
+      "entertainment",
+      "shopping",
+      "healthcare",
+      "travel",
+      "other",
+    ];
+
     if (!validCategories.includes(category)) {
       category = "other";
     }
 
     let paymentMethod = data.paymentMethod?.toUpperCase() || "CASH";
-    const validPaymentMethods = ["CASH", "CARD", "UPI", "BANK_TRANSFER", "MOBILE_PAYMENT", "OTHER"];
+
+    const validPaymentMethods = [
+      "CASH",
+      "CARD",
+      "UPI",
+      "BANK_TRANSFER",
+      "MOBILE_PAYMENT",
+      "OTHER",
+    ];
+
     if (!validPaymentMethods.includes(paymentMethod)) {
       paymentMethod = "CASH";
     }
@@ -452,27 +491,17 @@ export const scanReceiptFromBase64 = async (
       amount: Math.abs(Number(data.amount)),
       date: data.date,
       description: data.description || "",
-      category: category,
-      paymentMethod: paymentMethod,
+      category,
+      paymentMethod,
       type: "EXPENSE",
       receiptUrl: `data:${mimeType};base64,${base64}`,
     };
   } catch (error: any) {
-    console.error("Receipt scanning error:", error);
-    if (error.response) {
-      console.error("Axios error response:", error.response.status, error.response.data);
-    } else if (error.message) {
-      console.error("Error message:", error.message);
-    }
-    
-    const errorMessage = error.message || "Unknown error";
-    if (errorMessage.includes("Gemini") || errorMessage.includes("api")) {
-      return { error: "AI service unavailable. Please check API key." };
-    }
-    
-    return { error: "Receipt scanning service unavailable" };
+    console.error("❌ Receipt scanning error:", error?.message);
+
+    return {
+      error: "AI service unavailable (quota or API issue)",
+    };
   }
 };
-
-
 
