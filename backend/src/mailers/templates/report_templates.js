@@ -1,26 +1,11 @@
-import { formatCurrency } from "../../utils/format-currency";
-import { capitalizeFirstLetter } from "../../utils/helper";
-import {ReportType} from "../report_mailer"
-
-export const getReportEmailTemplate = (
-    reportData: ReportType & {
-        username:string},
-        frequency:string,
-        aiSuggestions?: string
-) => {
-    const{
-    username,
-        period,
-        totalIncome,
-        totalExpenses,
-        availableBalance,
-        savingsRate,
-        topSpendingCategories,
-        insights,
-    } = reportData;
-
-    const reportTitle = `${capitalizeFirstLetter(frequency)} Report`
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getReportEmailTemplate = void 0;
+const format_currency_1 = require("../../utils/format-currency");
+const helper_1 = require("../../utils/helper");
+const getReportEmailTemplate = (reportData, frequency, aiSuggestions) => {
+    const { username, period, totalIncome, totalExpenses, availableBalance, savingsRate, topSpendingCategories, insights, } = reportData;
+    const reportTitle = `${(0, helper_1.capitalizeFirstLetter)(frequency)} Report`;
     const categoryTable = `
     <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
         <thead>
@@ -31,16 +16,15 @@ export const getReportEmailTemplate = (
             </tr>
         </thead>
         <tbody>
-            ${topSpendingCategories.map((cat: any) => `
+            ${topSpendingCategories.map((cat) => `
             <tr style="background: #f8f9fa;">
                 <td style="padding: 10px; border: 1px solid #ddd;"><strong>${cat.name}</strong></td>
-                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${formatCurrency(cat.amount)}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${(0, format_currency_1.formatCurrency)(cat.amount)}</td>
                 <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${cat.percent}%</td>
             </tr>
             `).join("")}
         </tbody>
     </table>`;
-
     const insightsTable = insights && insights.length > 0 ? `
     <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
         <thead>
@@ -49,7 +33,7 @@ export const getReportEmailTemplate = (
             </tr>
         </thead>
         <tbody>
-            ${insights.map((insight: string) => `
+            ${insights.map((insight) => `
             <tr style="background: #f0fff4;">
                 <td style="padding: 12px; border: 1px solid #ddd;">
                     <span style="color: #48bb78; margin-right: 8px;">💡</span>${insight}
@@ -58,7 +42,6 @@ export const getReportEmailTemplate = (
             `).join("")}
         </tbody>
     </table>` : "";
-
     const aiSuggestionsTable = aiSuggestions ? `
     <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
         <thead>
@@ -70,14 +53,13 @@ export const getReportEmailTemplate = (
             <tr style="background: #e6f7ff;">
                 <td style="padding: 15px; border: 1px solid #ddd; line-height: 1.8;">
                     ${aiSuggestions.split('\n').filter(s => s.trim()).map(s => {
-                        const text = s.replace(/^\d+\.\s*/, '').replace(/^[-•]\s*/, '');
-                        return `<div style="margin-bottom: 8px;">• ${text}</div>`;
-                    }).join("")}
+        const text = s.replace(/^\d+\.\s*/, '').replace(/^[-•]\s*/, '');
+        return `<div style="margin-bottom: 8px;">• ${text}</div>`;
+    }).join("")}
                 </td>
             </tr>
         </tbody>
     </table>` : "";
-
     const currentYear = new Date().getFullYear();
     return `
 <!DOCTYPE html>
@@ -183,15 +165,15 @@ export const getReportEmailTemplate = (
                     <tr>
                         <td style="background: #f8f9fa;">
                             <h3 style="margin: 0; color: #666; font-size: 14px;">Total Income</h3>
-                            <div class="summary-value positive">${formatCurrency(totalIncome)}</div>
+                            <div class="summary-value positive">${(0, format_currency_1.formatCurrency)(totalIncome)}</div>
                         </td>
                         <td style="background: #f8f9fa;">
                             <h3 style="margin: 0; color: #666; font-size: 14px;">Total Expenses</h3>
-                            <div class="summary-value negative">${formatCurrency(totalExpenses)}</div>
+                            <div class="summary-value negative">${(0, format_currency_1.formatCurrency)(totalExpenses)}</div>
                         </td>
                         <td style="background: #f8f9fa;">
                             <h3 style="margin: 0; color: #666; font-size: 14px;">Available Balance</h3>
-                            <div class="summary-value ${availableBalance >= 0 ? 'positive' : 'negative'}">${formatCurrency(availableBalance)}</div>
+                            <div class="summary-value ${availableBalance >= 0 ? 'positive' : 'negative'}">${(0, format_currency_1.formatCurrency)(availableBalance)}</div>
                         </td>
                         <td style="background: #f8f9fa;">
                             <h3 style="margin: 0; color: #666; font-size: 14px;">Savings Rate</h3>
@@ -224,3 +206,4 @@ export const getReportEmailTemplate = (
 </html>
         `;
 };
+exports.getReportEmailTemplate = getReportEmailTemplate;

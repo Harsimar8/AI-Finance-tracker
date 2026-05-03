@@ -6,10 +6,11 @@ export function convertToDollarUnit(amount : number){
     return amount / 100; 
 }
 
-export function formatCurrency(amount: number){
-    return new Intl.NumberFormat("en-US", {
+export function formatCurrency(amount: number, currency: string = "INR"){
+    return new Intl.NumberFormat("en-IN", {
         style: "currency",
-        currency: "USD",
-
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
     }).format(amount);
 }

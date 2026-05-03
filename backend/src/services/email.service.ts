@@ -1,6 +1,7 @@
 // src/services/email.service.ts
 import nodemailer from "nodemailer";
 import { Env } from "../config/env.config";
+import { getReportEmailTemplate } from "../mailers/templates/report_templates";
 
 interface SendReportEmailDTO {
   email: string;
@@ -8,37 +9,8 @@ interface SendReportEmailDTO {
   report: any;
   frequency: string;
   attachment?: { filename: string; content: Buffer } | null;
+  aiSuggestions?: string;
 }
-
-const getReportEmailTemplate = (report: any, username: string, frequency: string) => {
-  const topCategories = report.topSpendingCategories || report.summary?.topCategories || [];
-  const categoriesHtml = topCategories.length > 0
-    ? `<div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-        <h3 style="margin-top: 0;">Top Categories</h3>
-        ${topCategories.map((cat: any) => `<p>${cat.name}: ${cat.amount} (${cat.percent}%)</p>`).join('')}
-      </div>`
-    : '';
-
-  return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1 style="color: #2563eb;">Monthly Financial Report</h1>
-      <p>Hello <strong>${username}</strong>,</p>
-      <p>Here's your ${frequency} financial summary:</p>
-      
-      <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-        <h2 style="margin-top: 0;">Summary</h2>
-        <p><strong>Total Income:</strong> ${report.totalIncome || report.summary?.income || 0}</p>
-        <p><strong>Total Expenses:</strong> ${report.totalExpenses || report.summary?.expenses || 0}</p>
-        <p><strong>Available Balance:</strong> ${report.availableBalance || report.summary?.balance || 0}</p>
-        <p><strong>Savings Rate:</strong> ${report.savingsRate || report.summary?.savingsRate || 0}%</p>
-      </div>
-      
-      ${categoriesHtml}
-      
-      <p style="color: #64748b; font-size: 14px;">Best regards,<br/>Finance App Team</p>
-    </div>
-  `;
-};
 
 export const sendReportEmail = async ({
   email,
@@ -46,8 +18,16 @@ export const sendReportEmail = async ({
   report,
   frequency,
   attachment = null,
+  aiSuggestions,
 }: SendReportEmailDTO) => {
-  const html = getReportEmailTemplate(report, username, frequency);
+  const html = getReportEmailTemplate(
+    {
+      username,
+      ...report,
+    },
+    frequency,
+    aiSuggestions
+  );
   
   console.log("Email Service - Using Gmail SMTP");
   console.log("Email Service - Sending to:", email);

@@ -6,7 +6,8 @@ import { NotFoundException } from "../utils/app-error";
 import { calculateNextReportDate } from "../utils/helper";
 import { UpdateReportSettingDTO } from "../validators/report_validator";
 import { createUserContent, GenerateImagesResponse } from "@google/genai";
-import { genAIModel } from "../config/google-ai-config";
+import { genAI } from "../config/google-ai-config";
+import { reportInsightsPrompt, spendingSuggestionsPrompt } from "../utils/prompt";
 
 export const getAllReportsService = async (
     userId: String,
@@ -152,26 +153,22 @@ export const generateReportService = async (
                         $limit: 5,
                     },
 
-                ],
+],
             },
         },
         {
             $project: {
                 totalIncome: { $arrayElemAt: ["$summary.totalIncome", 0] },
                 totalExpenses: {
-                    $arrayElemAt: ["$summary.totalIncome", 0],
+                    $arrayElemAt: ["$summary.totalExpenses", 0],
                 },
                 categories: 1,
-            },
+            }
         }
-
-
     ]);
 
-    if(!results?.length || (results[0]?.totalIncome == 0 && results[0]?.totalExpenses == 0)
-    )
-
-    return null;
+    if(!results?.length || (results[0]?.totalIncome == 0 && results[0]?.totalExpenses == 0))
+        return null;
 
     const { totalIncome = 0,
          totalExpenses = 0,
@@ -183,7 +180,7 @@ export const generateReportService = async (
         (acc: any, {_id, total}: any) => {
             acc[_id] = {
                 amount: total,
-                percentage : totalExpenses > 0 ? Math.round(total / totalExpenses) * 100 : 0,
+                percentage : totalExpenses > 0 ? Math.round((total / totalExpenses) * 100) : 0,
 
             };
             return acc;
@@ -198,7 +195,7 @@ export const generateReportService = async (
 
      const periodLabel = `${format(fromDate, "MMMM d")} - ${format(toDate, "d, yyyy")}`;
 
-     const insights = generateInsightsAI({
+     const insights = await generateInsightsAI({
         totalIncome,
         totalExpenses,
         availableBalance,
@@ -206,6 +203,18 @@ export const generateReportService = async (
         categories: byCategory,
         periodLabel: periodLabel
 
+     });
+
+     const aiSuggestions = await generateSpendingSuggestionsAI({
+        availableBalance,
+        monthlyIncome: totalIncome,
+        topCategories: Object.entries(byCategory || {})
+            .map(([name, cat]: any) => ({
+                name,
+                amount: cat.amount,
+                percent: cat.percent,
+            }))
+            .slice(0, 5),
      });
 
      return {
@@ -221,30 +230,63 @@ export const generateReportService = async (
                 amount: cat.amount,
                 percent: cat.percent
             })),
-        }
-     };
-     insights; 
+        },
+insights: insights || [],
+         aiSuggestions: aiSuggestions || "",
+      };
 };
+
+async function generateSpendingSuggestionsAI({
+    availableBalance,
+    monthlyIncome,
+    topCategories,
+}: {
+    availableBalance: number;
+    monthlyIncome: number;
+    topCategories: { name: string; amount: number; percent: number }[];
+}) {
+    try {
+        const prompt = spendingSuggestionsPrompt({
+            availableBalance,
+            monthlyIncome,
+            topCategories,
+        });
+
+        const result = await genAI.models.generateContent({
+            model: "gemini-2.0-flash",
+            contents: [createUserContent([prompt])],
+        });
+
+        const response = result.text;
+        return response?.trim() || "";
+    } catch (error) {
+        console.error("Error generating spending suggestions:", error);
+        return `1. With ₹${availableBalance} available, consider allocating 20% (₹${Math.round(availableBalance * 0.2)}) to emergency fund
+2. Track daily expenses to stay within budget
+3. Review subscriptions and cancel unused services
+4. Use cashback apps for essential purchases
+5. Set aside ₹${Math.round(availableBalance * 0.1)} monthly for savings goals`;
+    }
+}
 
 async function generateInsightsAI({
     totalIncome,
-        totalExpenses,
-        availableBalance,
-        savingRate,
-        categories,
-        periodLabel,
-
+    totalExpenses,
+    availableBalance,
+    savingRate,
+    categories,
+    periodLabel,
 }: {
     totalIncome: number;
-        totalExpenses: number;
-        availableBalance: number;
-        savingRate: number;
-        categories: Record<string, {amount: number; percentage:
-            number }>;
-        periodLabel: string;
+    totalExpenses: number;
+    availableBalance: number;
+    savingRate: number;
+    categories: Record<string, {amount: number; percentage:
+        number }>;
+    periodLabel: string;
 }) {
     try{
-        const prompt = reportInsightPrompt({
+        const prompt = reportInsightsPrompt({
             totalIncome : totalIncome,
         totalExpenses : totalExpenses,
         availableBalance: availableBalance,
@@ -254,7 +296,7 @@ async function generateInsightsAI({
         });
 
         const result = await genAI.models.generateContent({
-            model: genAIModel,
+            model: "gemini-2.0-flash",
             contents: [createUserContent([prompt])],
             config: {
                 responseMimeType: "application/json"
@@ -269,7 +311,12 @@ async function generateInsightsAI({
             return data;
     }
     catch(error){
-        return [];
+        console.error("Error generating insights:", error);
+        return [
+            `Your savings rate is ${savingRate.toFixed(1)}% - aim for 20% to build wealth`,
+            `Consider tracking expenses daily to identify spending patterns`,
+            `Set aside at least 10% of income for emergencies`
+        ];
     }
 }
 

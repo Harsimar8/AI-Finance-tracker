@@ -1,13 +1,12 @@
-import {PaymentMethodEnum } from "../models/transaction.model";
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.spendingSuggestionsPrompt = exports.reportInsightsPrompt = exports.receiptPrompt = void 0;
 const CATEGORIES = [
-  "groceries", "dining", "transportation", "utilities",
-  "entertainment", "shopping", "healthcare", "travel",
-  "housing", "income", "investments", "other"
+    "groceries", "dining", "transportation", "utilities",
+    "entertainment", "shopping", "healthcare", "travel",
+    "housing", "income", "investments", "other"
 ];
-
-export const receiptPrompt = 
-`You are an expert receipt analyzer specializing in Indian receipts.
+exports.receiptPrompt = `You are an expert receipt analyzer specializing in Indian receipts.
 
 Analyze this receipt image and extract transaction details.
 
@@ -51,29 +50,10 @@ Payment method inference:
 - If online order = "UPI" or "CARD"
 - Default to "CASH" if unsure
 `;
-
-
-export const reportInsightsPrompt = ({
-    totalIncome,
-    totalExpenses,
-    availableBalance,
-    savingRate,
-    categories,
-    periodLabel,
-}: {
-    totalIncome: number;
-    totalExpenses: number;
-    availableBalance: number;
-    savingRate: number;
-    categories: Record<string, { amount: number; percentage: number }>;
-    periodLabel: string;
-}) => {
+const reportInsightsPrompt = ({ totalIncome, totalExpenses, availableBalance, savingRate, categories, periodLabel, }) => {
     const categoryList = Object.entries(categories)
-        .map(([name, { amount, percentage }]) =>
-            `- ${name}: ₹${amount} (${percentage}%)`
-        )
+        .map(([name, { amount, percentage }]) => `- ${name}: ₹${amount} (${percentage}%)`)
         .join("\n");
-
     return `
 You are a financial advisor AI. Analyze the following financial data for the period ${periodLabel} and provide 4-6 insightful observations and actionable recommendations.
 
@@ -98,20 +78,11 @@ Example format:
 Return only the JSON array, no additional text.
     `;
 };
-
-export const spendingSuggestionsPrompt = ({
-    availableBalance,
-    monthlyIncome,
-    topCategories,
-}: {
-    availableBalance: number;
-    monthlyIncome: number;
-    topCategories: { name: string; amount: number; percent: number }[];
-}) => {
+exports.reportInsightsPrompt = reportInsightsPrompt;
+const spendingSuggestionsPrompt = ({ availableBalance, monthlyIncome, topCategories, }) => {
     const categoryStr = topCategories
         .map(c => `${c.name}: ₹${c.amount} (${c.percent}%)`)
         .join(", ");
-
     return `
 You are a Gemini AI financial advisor. Based on the user's current financial situation, provide smart spending suggestions.
 
@@ -134,3 +105,4 @@ Format your response as a simple list with line breaks, like:
 Use the ₹ symbol for rupees.
     `;
 };
+exports.spendingSuggestionsPrompt = spendingSuggestionsPrompt;

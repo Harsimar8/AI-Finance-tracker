@@ -38,7 +38,15 @@ export const generateReportFromImageController = asyncHandler(
     await sendReportEmail({
       email: req.user?.email!,
       username: req.user?.name!,
-      report,
+      report: {
+        period: report?.period || "Custom",
+        totalIncome: report?.summary?.income || 0,
+        totalExpenses: report?.summary?.expenses || 0,
+        availableBalance: report?.summary?.balance || 0,
+        savingsRate: report?.summary?.savingsRate || 0,
+        topSpendingCategories: report?.summary?.topCategories || [],
+        insights: report?.insights || [],
+      },
       frequency: "Custom",
       attachment: { filename: "expense.png", content: file.buffer },
     });
@@ -105,6 +113,8 @@ export const generateReportController = asyncHandler(
                         savingsRate: 0,
                         topCategories: [],
                     },
+                    insights: [],
+                    aiSuggestions: "",
                 };
             }
 
@@ -121,8 +131,10 @@ export const generateReportController = asyncHandler(
                             availableBalance: report.summary.balance,
                             savingsRate: report.summary.savingsRate,
                             topSpendingCategories: report.summary.topCategories,
+                            insights: report.insights || [],
                         },
                         frequency: "Monthly",
+                        aiSuggestions: report.aiSuggestions,
                     });
                     console.log(`Report email sent to ${userEmail}`);
                 } catch (emailError) {
@@ -180,8 +192,10 @@ export const resendAllReportsController = asyncHandler(
                             availableBalance: report.summary.balance,
                             savingsRate: report.summary.savingsRate,
                             topSpendingCategories: report.summary.topCategories,
+                            insights: report.insights || [],
                         },
                         frequency: "Monthly",
+                        aiSuggestions: report.aiSuggestions,
                     });
                     successCount++;
                 } else {
